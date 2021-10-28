@@ -8,6 +8,7 @@ import sys
 
 # Data Wrangling
 import math
+import random
 import pandas as pd
 import numpy as np
 from numpy import mean
@@ -265,47 +266,44 @@ warnings.filterwarnings('ignore')
 # New .py
 # Data Encoding Strategies
 # prepare input features
-def ordinal_encoding(data=ord_features_df):
+def ordinal_encoding(data):
     ''' Implementation of ordinal encoding '''
     oe = OrdinalEncoder()
-    oe.fit(ord_features_df)
-    Ord_enc = oe.transform(ord_features_df) # Using ordinal variables df
+    oe.fit(data)
+    Ord_enc = oe.transform(data) # Using ordinal variables df
+    
+    return Ord_enc
 
 # prepare target variable
-def label_encoding(data=y):
+def label_encoding(y):
     ''' Implementation of label encoding '''
     le = LabelEncoder()
     le.fit(y)
     y_enc = le.transform(y) # Using categorial variables df
+    
+    return y_enc
 
 # One-Hot Encoding
-def one_hot_encoding(x=one_hot_df, y):
+def one_hot_encoding(x, y):
     ''' Implementation of one-hot encoding '''
     #one_hot_df = pd.get_dummies(categorical_feature_eng, prefix='one_hot_ps_ind_02_cat')
-    one_hot_df = pd.merge(one_hot_df, y, left_index=True, right_index=True) # Merge on index -- Safer than concat
+    one_hot_df = pd.merge(x, y, left_index=True, right_index=True) # Merge on index -- Safer than concat
 
     model = linear_regression.LinearRegression()
-    model.fit(one_hot_df[['one_hot_ps_ind_02_cat_1.0', 
-                          'one_hot_ps_ind_02_cat_2.0', 
-                          'one_hot_ps_ind_02_cat_3.0', 
-                          'one_hot_ps_ind_02_cat_4.0']],
-              one_hot_df['target'])
+    model.fit(x[[cols]], y)
 
     display(model.coef_)
     display(model.intercept_)
 
 
 # Dummy Encoding
-def dummy_encoding(x=dummy_df, y):
+def dummy_encoding(x, y):
     ''' Implementation of dummy encoding '''
     #dummy_df = pd.get_dummies(categorical_feature_eng, prefix=['dummy_ps_ind_02_cat'], drop_first = True)
-    dummy_df = pd.merge(dummy_df, y, left_index=True, right_index=True) # Merge on index -- Safer than concat
+    dummy_df = pd.merge(x, y, left_index=True, right_index=True) # Merge on index -- Safer than concat
 
     model = linear_regression.LinearRegression()
-    model.fit(dummy_df[['dummy_ps_ind_02_cat_2.0', 
-                        'dummy_ps_ind_02_cat_3.0', 
-                        'dummy_ps_ind_02_cat_4.0']], # 'ps_ind_02_cat_1' become level 0
-              dummy_df['target'])
+    model.fit(x[[cols]], y)
 
     display(model.coef_)
     display(model.intercept_)
@@ -330,7 +328,7 @@ def dummy_encoding(x=dummy_df, y):
 # Create a benchmark dummy model
 random.seed(1234)
 
-def _generate_dummy_model_classification(X=X, y=y):
+def _generate_dummy_model_classification(X, y):
     
     ''' Create dummy models for classification algorithms '''
     
@@ -397,8 +395,10 @@ def _top_poly_predictors(model_data):
 ## - watermark
 ## - Progress Bars
 ## - Time cells to complete
-!pip install ipython-autotime
-%load_ext autotime
+
+#!pip install ipython-autotime
+#%load_ext autotime
+
 ## - Parallel Processing
 ## - Coding Standards & Linting: Black / Mypy / flake8 / Viztracer / MLNotify / Sonar Cube (pycharm)
 
