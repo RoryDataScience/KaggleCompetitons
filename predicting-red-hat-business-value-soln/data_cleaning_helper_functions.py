@@ -22,6 +22,11 @@ from itertools import combinations
 # Data Export
 import pickle
 
+# Data Visualisation
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
 # Check column alignment 
 def uncommon_elements(list1, list2):
     
@@ -41,7 +46,7 @@ def correct_dates(data, cols):
     
     ''' This function corrects date type variables'''
     
-    return pd.to_datetime(combined_data[cols], format = '%Y-%m-%d')
+    return pd.to_datetime(data[cols], format = '%Y-%m-%d')
 
 
 def correct_objects(data, cols):
@@ -130,7 +135,7 @@ def remove_missing_values(data, thresold_limit):
     return data.loc[:, data.isnull().sum() < thresold_limit*data.shape[0]]
 
 
-def _missing_value_ratio(data, threshold):
+def missing_value_ratio(data, threshold):
     
     ''' This function removes columns which have missing values over a predetermined threshold '''
     
@@ -148,25 +153,37 @@ def _missing_value_ratio(data, threshold):
     return variable, dropped_cols
 
 
-def impute_blank_missing_values(data, cols):
+#def impute_blank_missing_values(data, cols):
+#    
+#    ''' Missing Value imputation example '''
+#    
+#    return np.where((data[cols] == 'T') | (data[cols] == ' '), -99999, data[cols])
+
+
+def impute_nan_corrupt_missing_values_numeric(data, cols):
     
     ''' Missing Value imputation example '''
     
-    return np.where((data[cols] == 'T') | (data[cols] == ' '), 0, data[cols])
+    return np.where((data[cols] == '#VALUE!') | (data[cols] == 'nan' | (data[cols] == ' '), -99999, data[cols]))
 
-
-def impute_nan_corrupt_missing_values(data, cols):
+                    
+def impute_nan_corrupt_missing_values_categorical(data, cols):
     
     ''' Missing Value imputation example '''
     
-    return np.where((data[cols] == '#VALUE!') | (data[cols] == 'nan'), 0, data[cols])
+    for i in cols:
+        data[i] = np.where(data[i].isna(), "unclassified", data[i])
+    
+    return data
+    
+    #return np.where((data[cols] == '#VALUE!') | (data[cols] == 'nan') | (data[cols] == 'NaN') | (data[cols] == ' '), 'unclassified', data[cols])
 
 
-def _impute_negative_one_missing_data(data):
+def impute_negative_missing_data(data):
     
     ''' Replace -1 missing values with nan '''
     
-    return data.replace(-1, np.nan)
+    return data.replace(-999999, np.nan)
 
 
 # Data Preparation for Columns
@@ -182,31 +199,22 @@ def multiple_column_comparison(data, col):
     
     ''' This function outputs summary statistics for a subset of selectec columns'''
     
-    return print(data[(data.MO == 1) | (data.MO == 11) | (data.MO == 12)][col].describe())
+    return print(data[col].describe())
 
 
-def _determine_variable_cardinality(cat_features_df):
+def determine_variable_cardinality(data, cols):
 
     ''' This function outputs the number of unique categories per categorical variable '''
     
-    v = cat_features_df.columns
-
-    for f in v:
-        dist_values = train_data[f].value_counts().shape[0]
+    for f in cols:
+        dist_values = data[f].value_counts().shape[0]
         print('Variable {} has {} distinct values'.format(f, dist_values))
 
 
 # Zero-Variance Predictors
-def zero_variance_predictors(data):
+def remove_columns_unique_values(data):
     
-    ''' This function removes zero variance predictors from the data set '''
-    
-    return data.loc[:, data.apply(pd.Series.nunique) != 1]
-
-
-def _remove_columns_unique_values(data):
-    
-    ''' This function removes zero variance predictors from the data set in two steps '''
+    ''' This function removes zero variance predictors from the data set in two steps: Faster than zero_variance_predictors  '''
     
     nunique = data.apply(pd.Series.nunique)
     cols_to_drop = nunique[nunique == 1].index
@@ -214,7 +222,14 @@ def _remove_columns_unique_values(data):
     return data.drop(cols_to_drop, axis=1)
 
 
-def _low_variance_filter(data, threshold):
+#def zero_variance_predictors(data):
+#    
+#    ''' This function removes zero variance predictors from the data set '''
+#    
+#    return data.loc[:, data.apply(pd.Series.nunique) != 1]
+
+
+def low_variance_filter(data, threshold):
     
     ''' This function identified columns of low variance '''
     
